@@ -12,10 +12,15 @@ const {
 } = require("discord.js");
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMembers
+    ]
 });
 
+const TOKEN = process.env.TOKEN;
 const GUILD_ID = "1527691904785973290";
+const SERVICE_ROLE = "1527730077213659136";
 
 client.once(Events.ClientReady, async () => {
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
@@ -27,14 +32,18 @@ client.once(Events.ClientReady, async () => {
             .toJSON()
     ];
 
-    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+    const rest = new REST({ version: "10" }).setToken(TOKEN);
 
-    await rest.put(
-        Routes.applicationGuildCommands(client.application.id, GUILD_ID),
-        { body: commands }
-    );
+    try {
+        await rest.put(
+            Routes.applicationGuildCommands(client.application.id, GUILD_ID),
+            { body: commands }
+        );
 
-    console.log("✅ Commande /setup enregistrée !");
+        console.log("✅ Commande /setup enregistrée !");
+    } catch (error) {
+        console.error(error);
+    }
 });
 
 client.on(Events.InteractionCreate, async interaction => {
@@ -53,7 +62,6 @@ Clique sur un bouton ci-dessous.`
                 );
 
             const row = new ActionRowBuilder().addComponents(
-
                 new ButtonBuilder()
                     .setCustomId("service_on")
                     .setLabel("Prendre mon service")
@@ -79,7 +87,7 @@ Clique sur un bouton ci-dessous.`
                     .setStyle(ButtonStyle.Secondary)
             );
 
-            await interaction.reply({
+            return interaction.reply({
                 embeds: [embed],
                 components: [row]
             });
@@ -88,20 +96,54 @@ Clique sur un bouton ci-dessous.`
 
     if (interaction.isButton()) {
 
-        if (interaction.customId === "service_on")
-            return interaction.reply({ content: "🟢 Service commencé !", ephemeral: true });
+        if (interaction.customId === "service_on") {
 
-        if (interaction.customId === "service_off")
-            return interaction.reply({ content: "🔴 Service terminé !", ephemeral: true });
+            if (!interaction.member.roles.cache.has(SERVICE_ROLE)) {
+                await interaction.member.roles.add(SERVICE_ROLE);
+            }
 
-        if (interaction.customId === "heures")
-            return interaction.reply({ content: "📊 Tu as actuellement 0 heure.", ephemeral: true });
+            return interaction.reply({
+                content: "🟢 Tu es maintenant en service !",
+                ephemeral: true
+            });
+        }
 
-        if (interaction.customId === "staff")
-            return interaction.reply({ content: "👥 Aucun employé en service.", ephemeral: true });
+        if (interaction.customId === "service_off") {
+
+            if (interaction.member.roles.cache.has(SERVICE_ROLE)) {
+                await interaction.member.roles.remove(SERVICE_ROLE);
+            }
+
+            return interaction.reply({
+                content: "🔴 Tu as terminé ton service !",
+                ephemeral: true
+            });
+        }
+
+        if (interaction.customId === "heures") {
+
+            return interaction.reply({
+                content: "📊 Le compteur d'heures arrive à l'étape suivante.",
+                ephemeral: true
+            });
+        }
+
+        if (interaction.customId === "staff") {
+
+            const role = interaction.guild.roles.cache.get(SERVICE_ROLE);
+
+            const membres = role.members.map(m => `• ${m.user.username}`);
+
+            return interaction.reply({
+                content: membres.length
+                    ? `👥 Employés en service :\n\n${membres.join("\n")}`
+                    : "👥 Aucun employé n'est actuellement en service.",
+                ephemeral: true
+            });
+        }
 
     }
 
 });
 
-client.login(process.env.TOKEN);
+client.login(TOKEN);
