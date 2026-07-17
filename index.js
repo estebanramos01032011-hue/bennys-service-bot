@@ -21,17 +21,20 @@ client.once(Events.ClientReady, async () => {
             .toJSON()
     ];
 
-    try {
-        const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
+    try {
         await rest.put(
-            Routes.applicationCommands(client.application.id),
+            Routes.applicationGuildCommands(
+                client.application.id,
+                "1527691904785973290"
+            ),
             { body: commands }
         );
 
-        console.log("✅ Commande enregistrée !");
-    } catch (err) {
-        console.error(err);
+        console.log("✅ Commande /ping enregistrée sur le serveur !");
+    } catch (error) {
+        console.error(error);
     }
 });
 
