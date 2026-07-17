@@ -11,6 +11,8 @@ const {
     EmbedBuilder
 } = require("discord.js");
 
+const { initDatabase } = require("./database");
+
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -23,6 +25,9 @@ const GUILD_ID = "1527691904785973290";
 const SERVICE_ROLE = "1527730077213659136";
 
 client.once(Events.ClientReady, async () => {
+
+ await initDatabase();
+    
     console.log(`✅ Connecté en tant que ${client.user.tag}`);
 
     const commands = [
