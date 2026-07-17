@@ -1,4 +1,4 @@
-const {
+const {throw new Error("TEST CHATGPT");
     Client,
     GatewayIntentBits,
     Events,
