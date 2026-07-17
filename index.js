@@ -1,14 +1,42 @@
-const { Client, GatewayIntentBits } = require('discord.js');
+const {
+    Client,
+    GatewayIntentBits,
+    Events,
+    REST,
+    Routes,
+    SlashCommandBuilder
+} = require("discord.js");
 
 const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMembers
-  ]
+    intents: [GatewayIntentBits.Guilds]
 });
 
-client.once('ready', () => {
-  console.log(`✅ Connecté en tant que ${client.user.tag}`);
+client.once(Events.ClientReady, async () => {
+    console.log(`✅ Connecté en tant que ${client.user.tag}`);
+
+    const commands = [
+        new SlashCommandBuilder()
+            .setName("ping")
+            .setDescription("Teste le bot")
+            .toJSON()
+    ];
+
+    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
+
+    await rest.put(
+        Routes.applicationCommands(client.user.id),
+        { body: commands }
+    );
+
+    console.log("✅ Commande /ping enregistrée !");
+});
+
+client.on(Events.InteractionCreate, async interaction => {
+    if (!interaction.isChatInputCommand()) return;
+
+    if (interaction.commandName === "ping") {
+        await interaction.reply("🏎️ Le bot Benny's fonctionne !");
+    }
 });
 
 client.login(process.env.TOKEN);
